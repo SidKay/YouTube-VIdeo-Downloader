@@ -6,7 +6,7 @@ from pytube import YouTube
 def download():
     url = YouTube(str(link.get()))
     video = url.streams.filter(file_extension='mp4').get_by_resolution('360p')
-    video.download(filename=f'{video.title}.mp4', output_path='C:/Users/Sidney Anya/Documents/Youtube Downloader Test')
+    video.download(filename=f'{video.title}.mp4', output_path='./')
     showinfo(title='', message='Download Completed')
         
 root = tk.Tk()

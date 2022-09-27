@@ -6,4 +6,4 @@ A Simple App that can download YouTube Videos
 
 ### Build 2 (27/09/2022)
 - Added feature to select video quality.
-- Bug fixes.
+- Added a few cases to handle exceptions.

@@ -1,23 +1,60 @@
 # I use this to test code without altering the main.py file
-
-try:                        # In order to be able to import tkinter for
-    import tkinter as tk    # either in python 2 or in python 3
-except ImportError:
-    import Tkinter as tk
+from tkinter import ttk
+import tkinter as tk
+from tkinter.messagebox import showinfo
 
 
-def main():
-    root = tk.Tk()
-    side_by_side_widgets = dict()
-    the_widget_beneath = tk.Entry(root)
-    frame = tk.Frame(root)
-    for name in {"side b", "y side"}:
-        side_by_side_widgets[name] = tk.Label(frame, text=name)
-        side_by_side_widgets[name].pack(side='left', expand=True)
-    frame.pack(fill='x')
-    the_widget_beneath.pack()
-    root.mainloop()
+# root window
+root = tk.Tk()
+root.geometry('300x120')
+root.title('Progressbar Demo')
 
 
-if __name__ == '__main__':
-    main()
+def update_progress_label():
+    return f"Current Progress: {pb['value']}%"
+
+
+def progress():
+    if pb['value'] < 100:
+        pb['value'] += 20
+        value_label['text'] = update_progress_label()
+    else:
+        showinfo(message='The progress completed!')
+
+
+def stop():
+    pb.stop()
+    value_label['text'] = update_progress_label()
+
+
+# progressbar
+pb = ttk.Progressbar(
+    root,
+    orient='horizontal',
+    mode='determinate',
+    length=280
+)
+# place the progressbar
+pb.grid(column=0, row=0, columnspan=2, padx=10, pady=20)
+
+# label
+value_label = ttk.Label(root, text=update_progress_label())
+value_label.grid(column=0, row=1, columnspan=2)
+
+# start button
+start_button = ttk.Button(
+    root,
+    text='Progress',
+    command=progress
+)
+start_button.grid(column=0, row=2, padx=10, pady=10, sticky=tk.E)
+
+stop_button = ttk.Button(
+    root,
+    text='Stop',
+    command=stop
+)
+stop_button.grid(column=1, row=2, padx=10, pady=10, sticky=tk.W)
+
+
+root.mainloop()

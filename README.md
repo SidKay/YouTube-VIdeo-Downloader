@@ -10,3 +10,6 @@ A Simple App that can download YouTube Videos
 
 ### Build 3 (28/07/2022)
 - Minor bug fixes. Nothing big yet.
+
+### Build 4 (01/08/2022)
+- You can now select where you want to download your video to.

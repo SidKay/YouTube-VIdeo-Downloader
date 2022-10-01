@@ -1,10 +1,14 @@
 import os
 import string
+
 import pytube
+from pytube import YouTube
+
 import tkinter as tk
 from tkinter import ttk
-from tkinter.messagebox import showinfo
-from pytube import YouTube
+from tkinter import filedialog
+from tkinter.messagebox import showerror, showinfo
+
 
 random_number = 0
 
@@ -35,19 +39,26 @@ def download():
                 if x not in list(string.punctuation):
                     new_name.append(x)
             # Download Path
-            path='./'
-            # if name in os.path.join(path, name):
-            #     name = f'{video.title}({selected_quality.get()})({random_number + 1}).mp4'
-            # try:
-            # url.register_on_progress_callback(progress)
-            video.download(filename=''.join(new_name).replace(' ', '_') + ' ' + '(' + str(selected_quality.get()) + ')' + '.mp4', output_path=path)
-            showinfo(title='Success', message='Download Completed')
+            path=str(selected_directory.get())
+            if not path:
+                showerror(title='Error', message='Select a download location')
+            else:
+                # if name in os.path.join(path, name):
+                #     name = f'{video.title}({selected_quality.get()})({random_number + 1}).mp4'
+                # try:
+                # url.register_on_progress_callback(progress)
+                video.download(filename=''.join(new_name).replace(' ', '_') + ' ' + '(' + str(selected_quality.get()) + ')' + '.mp4', output_path=path)
+                showinfo(title='Success', message='Download Completed')
     # Runs if the link is not a YouTube link or the YT video is unavailable
     except pytube.exceptions.VideoUnavailable:
-        showinfo(title='Error', message='Link is invalid or the video is unavailable')
+        showerror(title='Error', message='Link is invalid or the video is unavailable')
     # Runs if the entry is not a link
     except pytube.exceptions.RegexMatchError:
-        showinfo(title='Error', message='Please enter a valid YouTube link')
+        showerror(title='Error', message='Please enter a valid YouTube link')
+
+def select_directory():
+    select_dir = filedialog.askdirectory()
+    selected_directory.insert(tk.END, select_dir)
 
 # Function for the progress bar
 # P.S.: I don't know how to do this yet
@@ -82,6 +93,8 @@ root.title('VideoTube')
 # print(f"{root.winfo_screenwidth()} {root.winfo_screenheight()}")
 
 qualities = ttk.LabelFrame(root, text='Video Quality')
+mode = ttk.LabelFrame(root, text='Download Format')
+download_dir = ttk.Frame(root)
 
 label = ttk.Label(
     root,
@@ -92,7 +105,7 @@ label = ttk.Label(
 link_label = ttk.Label(
     root,
     text='Enter your link here',
-    font=('Helvetica bold' , 12),
+    font=('Helvetica bold', 12),
 )
 
 link = tk.StringVar()
@@ -101,6 +114,28 @@ link_entry = ttk.Entry(
     textvariable=link,
     # width=72
 )
+
+directory = tk.StringVar()
+
+directory_label = ttk.Label(
+    root,
+    text='Download Location',
+    font=('Helvetica bold', 12)
+)
+
+selected_directory = ttk.Entry(
+    download_dir,
+    textvariable=directory
+)
+selected_directory.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=10)
+
+dir_button = ttk.Button(
+    download_dir,
+    text='Browse...',
+    command=select_directory
+).pack(side=tk.RIGHT, padx=10)
+
+
 
 download_icon = tk.PhotoImage(file="./assets/download icon.png")
 download_button = ttk.Button(
@@ -134,13 +169,15 @@ pb = ttk.Progressbar(
 version_no = ttk.Label(
     root,
     foreground='gray',
-    text='Build 3',
+    text='Build 4',
 )
 
 label.pack(anchor=tk.N, pady=10)
 link_label.pack()
 link_entry.pack(padx=10, pady=5, fill=tk.X, anchor=tk.N)
 link_entry.focus()
+directory_label.pack()
+download_dir.pack(pady=5, fill=tk.X)
 for quality in video_qualities:
     side_by_side_widgets[quality] = ttk.Radiobutton(
         qualities,

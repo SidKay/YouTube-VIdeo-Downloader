@@ -1,60 +1,21 @@
 # I use this to test code without altering the main.py file
-from tkinter import ttk
 import tkinter as tk
-from tkinter.messagebox import showinfo
 
 
-# root window
+def on_rb_press():
+    sum_label['text'] += var.get()
+    if sum_label['text'] >= 30:
+        for key in radiobuttons:
+            radiobuttons[key]['state'] = 'disabled'
+
+
 root = tk.Tk()
-root.geometry('300x120')
-root.title('Progressbar Demo')
-
-
-def update_progress_label():
-    return f"Current Progress: {pb['value']}%"
-
-
-def progress():
-    if pb['value'] < 100:
-        pb['value'] += 20
-        value_label['text'] = update_progress_label()
-    else:
-        showinfo(message='The progress completed!')
-
-
-def stop():
-    pb.stop()
-    value_label['text'] = update_progress_label()
-
-
-# progressbar
-pb = ttk.Progressbar(
-    root,
-    orient='horizontal',
-    mode='determinate',
-    length=280
-)
-# place the progressbar
-pb.grid(column=0, row=0, columnspan=2, padx=10, pady=20)
-
-# label
-value_label = ttk.Label(root, text=update_progress_label())
-value_label.grid(column=0, row=1, columnspan=2)
-
-# start button
-start_button = ttk.Button(
-    root,
-    text='Progress',
-    command=progress
-)
-start_button.grid(column=0, row=2, padx=10, pady=10, sticky=tk.E)
-
-stop_button = ttk.Button(
-    root,
-    text='Stop',
-    command=stop
-)
-stop_button.grid(column=1, row=2, padx=10, pady=10, sticky=tk.W)
-
-
-root.mainloop()
+sum_label = tk.Label(root, text=0)
+sum_label.pack()
+radiobuttons = dict()
+var = tk.IntVar(value=1)
+for i in range(1, 6):
+    radiobuttons[i] = tk.Radiobutton(root, text=i, variable=var,
+                                                value=i, command=on_rb_press)
+    radiobuttons[i].pack()
+tk.mainloop()

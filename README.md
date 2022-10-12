@@ -8,8 +8,12 @@ A Simple App that can download YouTube Videos
 - Added feature to select video quality.
 - Added a few cases to handle exceptions.
 
-### Build 3 (28/07/2022)
+### Build 3 (28/09/2022)
 - Minor bug fixes. Nothing big yet.
 
-### Build 4 (01/08/2022)
+### Build 4 (01/10/2022)
 - You can now select where you want to download your video to.
+
+### Build 5 (12/10/2022)
+- Awakened from slumber to add the option of downloading only audio.
+- You don't need an IDE to run the app anymore (There's now an executable version).

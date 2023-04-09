@@ -1,6 +1,10 @@
 # YouTube-Video-Downloader
 A Simple App that can download YouTube Videos
 
+## P.S.: If you're trying to download a video with the program, just wait for it. It may look like the program is not responding but it really is.
+
+You can download and run it [here](https://github.com/SidKay/YT-Vid-Downloader-Program)
+
 ### Build 1 (25/09/2022)
 - Initial Release. Can only download YouTube videos in 360p.
 

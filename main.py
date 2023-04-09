@@ -7,83 +7,78 @@ from pytube import YouTube
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
-from tkinter.messagebox import showerror, showinfo
-
-random_number = 0
+from tkinter.messagebox import showerror, showinfo, askyesno 
 
 # Video download function
-def download():
+def download() -> None:
+    """
+    This is the main download function.
+    The link, format, resolution and download path are gotten from the UI and are used here to specify the download requirements.
+    """
     try:
-        url = YouTube(str(link.get()))
-        
-        # Runs if the selected format is 'Audio'
-        if str(down_type.get()) == 'Audio':
-            # ---
-            # Work on this tonight
-            audio = url.streams.get_audio_only('mp4')
-            name = f'{audio.title}'
-            new_name = []
-            # Checks and removes punctuations from the video name
-            for x in name:
-                if x not in list(string.punctuation):
-                    new_name.append(x)
-            # Download Path
-            # Gotten from the directory entry in the UI
-            path=str(selected_directory.get())
-            # Runs if the download path is empty
-            if not path:
-                showerror(title='Error', message='Select a download location')
+        try:
+            # Variable declarations
+            url = YouTube(str(link.get()), on_progress_callback=progress)
+            format = str(down_type.get())
+            path = str(selected_directory.get())
+            resolution = str(selected_quality.get())
+
+            if format == 'Audio':   # The if-else statement decides if the program is required to download an audio or video file.
+                audio = url.streams.get_audio_only('mp4')   # Gets the YouTube audio in '.mp3' format.
+                name = f'{audio.title}'
             else:
-                audio.download(filename=''.join(new_name).replace(' ', '_') + ' ' + '(' + str(down_type.get()) + ')' + '.mp3', output_path=path)
-                showinfo(title='Success', message='Download Completed')
+                video = url.streams.filter(file_extension='mp4').get_by_resolution(resolution)  # Gets the YouTube video with the resolution specified in the GUI.
+                name=f'{video.title}'
 
-        # Runs if the user has not selected a format
-        elif not str(down_type.get()):
-            showinfo(title='Error', message='Please select a download format')
+        except AttributeError:  # Runs if the video is a 'NoneType' object. This happens if the selected resolution or file extension can't be found.
+            showinfo(title='Error', message='Selected resolution is unavailable. Try a different resolution.')
+        new_name = []
 
-        # Runs if the selected format is 'Video'
+        for x in name:  # Checks and removes punctuations from the video name.
+            if x not in list(string.punctuation):
+                new_name.append(x)
+
+        if not path:    # Runs if the download path is empty.
+            showerror(title='Error', message='Select a download location')
         else:
-            if not str(selected_quality.get()):
-                showinfo(title='Error', message='Please select a video quality')
-            else:
-                try:
-                    # Gets the YouTube video with the resolution specified in the GUI
-                    video = url.streams.filter(file_extension='mp4').get_by_resolution(str(selected_quality.get()))
-                    name=f'{video.title}'
-                # Runs if the video is a 'NoneType' object
-                # This happens if the selected resolution or file extension can't be found
-                except AttributeError:
-                    showinfo(title='Error', message='Selected resolution is unavailable. Try a different resolution.')
-                new_name = []
-                # Checks and removes punctuations from the video name
-                for x in name:
-                    if x not in list(string.punctuation):
-                        new_name.append(x)
-                # Download Path
-                # Gotten from the directory entry in the UI
-                path=str(selected_directory.get())
-                # Runs if the download path is empty
-                if not path:
-                    showerror(title='Error', message='Select a download location')
-                else:
-                    # if name in os.path.join(path, name):
-                    #     name = f'{video.title}({selected_quality.get()})({random_number + 1}).mp4'
-                    # try:
-                    # url.register_on_progress_callback(progress)
-                    video.download(filename=''.join(new_name).replace(' ', '_') + ' ' + '(' + str(selected_quality.get()) + ')' + '.mp4', output_path=path)
+            if format == 'Audio':
+                aud_name = ''.join(new_name).replace(' ', '_') + ' ' + '(' + format + ')' + '.mp3'
+                if not os.path.isfile(os.path.join(path, aud_name)):
+                    audio.download(filename=aud_name, output_path=path)
                     showinfo(title='Success', message='Download Completed')
-    # Runs if the link is not a YouTube link or the YT video is unavailable
-    except pytube.exceptions.VideoUnavailable:
+                else:
+                    if confirm_download("This file already exists in the current directory. Do you want to download it anyway?"):
+                        audio.download(filename=new_file_name(aud_name, path), output_path=path)
+                        showinfo(title='Success', message='Download Completed')
+            else:
+                vid_name = ''.join(new_name).replace(' ', '_') + ' ' + '(' + resolution + ')' + '.mp4'
+                if not os.path.isfile(os.path.join(path, vid_name)):
+                    video.download(filename=vid_name, output_path=path)
+                    showinfo(title='Success', message='Download Completed')
+                else:
+                    if confirm_download("This file already exists in the current directory. Do you want to download it anyway?"):
+                        video.download(filename=new_file_name(vid_name, path), output_path=path)
+                        showinfo(title='Success', message='Download Completed')
+
+    except pytube.exceptions.VideoUnavailable:  # Runs if the link is not a YouTube link or the YT video is unavailable
         showerror(title='Error', message='Link is invalid or the video is unavailable')
-    # Runs if the entry is not a link
-    except pytube.exceptions.RegexMatchError:
+
+    except pytube.exceptions.RegexMatchError:   # Runs if the entry is not a link
         showerror(title='Error', message='Please enter a valid YouTube link')
 
 def select_directory():
+    """
+    This function runs when the user clicks the 'Browse...' button on the UI.
+    It returns the selected directory to the entry widget beside the 'Browse...' button.
+    """
     select_dir = filedialog.askdirectory()
     selected_directory.insert(tk.END, select_dir)
 
 def disable_buttons():
+    """
+    This function disables the radio buttons for the video quality when the format is on 'Audio'.
+    It also re-enables the radio buttons when the format is on 'Video'.
+    """
     if str(down_type.get()) == "Audio":
         for key in side_by_side_widgets:
             side_by_side_widgets[key]['state'] = 'disabled'
@@ -91,15 +86,34 @@ def disable_buttons():
         for key in side_by_side_widgets:
             side_by_side_widgets[key]['state'] = 'enabled'
 
-# Function for the progress bar
-# P.S.: I don't know how to do this yet
-# def progress(stream, chunk, bytes_remaining):
-#     max_value = stream.filesize
-#     bytes_downloaded = max_value - bytes_remaining
-#     pb['value'] = bytes_downloaded
-#     pb['maximum'] = max_value
-#     if bytes_downloaded < max_value:
-#         pb.after(100, progress())
+def confirm_download(question: str) -> bool:
+    """
+    This function confirms if the user wants to perform an action.
+    In this case, it's if the user wants to re-download an already existing file.
+    """
+    answer = askyesno(title='Alert', message=question)
+    return answer
+
+def new_file_name(name: str, path: str) -> str:
+    """
+    This function appends a unique number to the file name if a file with the same name already exists.
+    Why would someone want to download the same video again? I have no idea.
+    This function exists to make sure your duplicate downloads are duplicates.
+    """
+    file_parts = os.path.splitext(name)
+    base_name = file_parts[0]
+    extension = file_parts[1]
+    i = 1
+    while True:
+        n_name = f'{base_name}({i}){extension}'
+        if not os.path.isfile(os.path.join(n_name, path)):
+            return n_name
+        i += 1
+
+def progress(stream, chunk, bytes_remaining):
+    percent = (100 * (stream.filesize - bytes_remaining)) / stream.filesize
+    pb.config(text=f'{percent}%')
+
 
 root = tk.Tk()
 
@@ -183,10 +197,9 @@ video_qualities = ('144p', '240p', '360p', '480p', '720p', '1080p')
 down_type = tk.StringVar()
 types = ('Video', 'Audio')
 
-pb = ttk.Progressbar(
+pb = ttk.Label(
     root,
-    orient='horizontal',
-    mode='determinate',
+    text=''
 )
 
 version_no = ttk.Label(

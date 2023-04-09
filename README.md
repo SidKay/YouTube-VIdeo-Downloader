@@ -17,3 +17,8 @@ A Simple App that can download YouTube Videos
 ### Build 5 (12/10/2022)
 - Awakened from slumber to add the option of downloading only audio.
 - You don't need an IDE to run the app anymore (There's now an executable version).
+
+### Build 6 (09/04/2023)
+- Code refactoring (Part 1).
+- The program can now check if there is a duplicate file in the download directory.
+- Added a (somewhat) working download progress indicator.

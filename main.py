@@ -1,5 +1,6 @@
 import os
 import string
+from urllib.error import URLError
 
 import pytube
 from pytube import YouTube
@@ -23,6 +24,7 @@ def download() -> None:
             path = str(selected_directory.get())
             resolution = str(selected_quality.get())
 
+
             if format == 'Audio':   # The if-else statement decides if the program is required to download an audio or video file.
                 audio = url.streams.get_audio_only('mp4')   # Gets the YouTube audio in '.mp3' format.
                 name = f'{audio.title}'
@@ -31,40 +33,53 @@ def download() -> None:
                 name=f'{video.title}'
 
         except AttributeError:  # Runs if the video is a 'NoneType' object. This happens if the selected resolution or file extension can't be found.
-            showinfo(title='Error', message='Selected resolution is unavailable. Try a different resolution.')
-        new_name = []
+            error('Selected resolution is unavailable. Try a different resolution.')
+        confirm = audio if format == 'Audio' else video
+        if query(f'File size: {round((confirm.filesize/1000000), 2)} MB. Proceed with download?'):
+            new_name = []
 
-        for x in name:  # Checks and removes punctuations from the video name.
-            if x not in list(string.punctuation):
-                new_name.append(x)
+            for x in name:  # Checks and removes punctuations from the video name.
+                if x not in list(string.punctuation):
+                    new_name.append(x)
 
-        if not path:    # Runs if the download path is empty.
-            showerror(title='Error', message='Select a download location')
-        else:
-            if format == 'Audio':
-                aud_name = ''.join(new_name).replace(' ', '_') + ' ' + '(' + format + ')' + '.mp3'
-                if not os.path.isfile(os.path.join(path, aud_name)):
-                    audio.download(filename=aud_name, output_path=path)
-                    showinfo(title='Success', message='Download Completed')
-                else:
-                    if confirm_download("This file already exists in the current directory. Do you want to download it anyway?"):
-                        audio.download(filename=new_file_name(aud_name, path), output_path=path)
-                        showinfo(title='Success', message='Download Completed')
+            if not path:    # Runs if the download path is empty.
+                error('Select a download location.')
             else:
-                vid_name = ''.join(new_name).replace(' ', '_') + ' ' + '(' + resolution + ')' + '.mp4'
-                if not os.path.isfile(os.path.join(path, vid_name)):
-                    video.download(filename=vid_name, output_path=path)
-                    showinfo(title='Success', message='Download Completed')
+                if format == 'Audio':
+                    aud_name = ''.join(new_name).replace(' ', '_') + ' ' + '(' + format + ')' + '.mp3'
+                    if not os.path.isfile(os.path.join(path, aud_name)):
+                        # create_widgets(prog_label, prog_bar)
+                        audio.download(filename=aud_name, output_path=path)
+                        info('Download Completed.')
+                        # destroy_widgets(prog_label, prog_bar)
+                    else:
+                        if query("This file already exists in the current directory. Do you want to download it anyway?"):
+                            # create_widgets(prog_label, prog_bar)
+                            audio.download(filename=new_file_name(aud_name, path), output_path=path)
+                            info('Download Completed.')
+                            # destroy_widgets(prog_label, prog_bar)
                 else:
-                    if confirm_download("This file already exists in the current directory. Do you want to download it anyway?"):
-                        video.download(filename=new_file_name(vid_name, path), output_path=path)
-                        showinfo(title='Success', message='Download Completed')
+                    vid_name = ''.join(new_name).replace(' ', '_') + ' ' + '(' + resolution + ')' + '.mp4'
+                    if not os.path.isfile(os.path.join(path, vid_name)):
+                        # create_widgets(prog_label, prog_bar)
+                        video.download(filename=vid_name, output_path=path)
+                        info('Download Completed.')
+                        # destroy_widgets(prog_label, prog_bar)
+                    else:
+                        if query("This file already exists in the current directory. Do you want to download it anyway?"):
+                            # create_widgets(prog_label, prog_bar)
+                            video.download(filename=new_file_name(vid_name, path), output_path=path)
+                            info('Download Completed.')
+                            # destroy_widgets(prog_label, prog_bar)
 
     except pytube.exceptions.VideoUnavailable:  # Runs if the link is not a YouTube link or the YT video is unavailable
-        showerror(title='Error', message='Link is invalid or the video is unavailable')
+        error('Link is invalid or the video is unavailable.')
 
     except pytube.exceptions.RegexMatchError:   # Runs if the entry is not a link
-        showerror(title='Error', message='Please enter a valid YouTube link')
+        error('Please enter a valid YouTube link.')
+
+    except URLError:
+        error('Failed to connect. Ensure you have a stable internet connection.')
 
 def select_directory():
     """
@@ -86,13 +101,24 @@ def disable_buttons():
         for key in side_by_side_widgets:
             side_by_side_widgets[key]['state'] = 'enabled'
 
-def confirm_download(question: str) -> bool:
+def query(question: str) -> bool:
     """
     This function confirms if the user wants to perform an action.
-    In this case, it's if the user wants to re-download an already existing file.
     """
     answer = askyesno(title='Alert', message=question)
     return answer
+
+def error(errormessage: str) -> None:
+    """
+    This function displays an error message.
+    """
+    showerror(title='Error', message=errormessage)
+
+def info(information: str) -> None:
+    """
+    This function displays information.
+    """
+    showinfo(title='Success', message=information)
 
 def new_file_name(name: str, path: str) -> str:
     """
@@ -112,14 +138,23 @@ def new_file_name(name: str, path: str) -> str:
 
 def progress(stream, chunk, bytes_remaining):
     percent = (100 * (stream.filesize - bytes_remaining)) / stream.filesize
-    pb.config(text=f'{percent}%')
+    prog_label.config(text=f'{round(percent, 2)}%')
+    prog_bar['value'] = percent
+    root.update()
 
+# def create_widgets(*args):
+#     for b in args:
+#         b.pack(padx=10, pady=2 ,fill=tk.X, anchor=tk.CENTER)
+
+# def destroy_widgets(*args):
+#     for a in args:
+#         a.destroy()
 
 root = tk.Tk()
 
 # Window size
 width = 500
-height = 370
+height = 390
 
 # Screen Size
 scr_width = root.winfo_screenwidth()
@@ -197,7 +232,13 @@ video_qualities = ('144p', '240p', '360p', '480p', '720p', '1080p')
 down_type = tk.StringVar()
 types = ('Video', 'Audio')
 
-pb = ttk.Label(
+prog_bar = ttk.Progressbar(
+        root,
+        orient='horizontal',
+        mode='determinate'
+    )
+
+prog_label = ttk.Label(
     root,
     text=''
 )
@@ -205,7 +246,7 @@ pb = ttk.Label(
 version_no = ttk.Label(
     root,
     foreground='gray',
-    text='Build 5',
+    text='Build 7',
 )
 
 label.pack(anchor=tk.N, pady=10)
@@ -236,7 +277,8 @@ for quality in video_qualities:
 mode.pack(padx=10, pady=5, fill=tk.X)
 qualities.pack(padx=10, pady=5, fill=tk.X)
 download_button.pack()
-pb.pack(padx=10, pady=5 ,fill=tk.X)
+prog_label.pack(padx=10, pady=2 ,fill=tk.X, anchor=tk.CENTER)
+prog_bar.pack(padx=10, pady=2 ,fill=tk.X, anchor=tk.CENTER)
 version_no.pack(anchor=tk.SE, side=tk.BOTTOM)
 
 root.mainloop()

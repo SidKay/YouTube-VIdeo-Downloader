@@ -20,4 +20,16 @@ You can download and run it [here](https://github.com/SidKay/YT-Vid-Downloader-P
 
 ### Build 5 (12/10/2022)
 - Awakened from slumber to add the option of downloading only audio.
-- You don't need an IDE to run the app anymore (There's now an executable version that you can download [here](https://github.com/SidKay/YT-Vid-Downloader-Program)).
+- You don't need an IDE to run the app anymore (There's now an executable version).
+
+### Build 6 (09/04/2023)
+- Code refactoring (Part 1).
+- The program can now check if there is a duplicate file in the download directory.
+- Added a (somewhat) working download progress indicator.
+
+### Build 7 (11/04/2023)
+- Code refactoring (Part 2).
+- The progress bar is working now.
+- The program can now display the file size before downloading.
+
+P.S.: If anyone can see this, could they let me know why the program is quite slow and acts like it's not responing all the time? Thanks.

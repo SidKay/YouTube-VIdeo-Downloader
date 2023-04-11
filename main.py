@@ -1,5 +1,6 @@
 import os
 import string
+from urllib.error import URLError
 
 import pytube
 from pytube import YouTube
@@ -7,83 +8,92 @@ from pytube import YouTube
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
-from tkinter.messagebox import showerror, showinfo
-
-random_number = 0
+from tkinter.messagebox import showerror, showinfo, askyesno 
 
 # Video download function
-def download():
+def download() -> None:
+    """
+    This is the main download function.
+    The link, format, resolution and download path are gotten from the UI and are used here to specify the download requirements.
+    """
     try:
-        url = YouTube(str(link.get()))
-        
-        # Runs if the selected format is 'Audio'
-        if str(down_type.get()) == 'Audio':
-            # ---
-            # Work on this tonight
-            audio = url.streams.get_audio_only('mp4')
-            name = f'{audio.title}'
+        try:
+            # Variable declarations
+            url = YouTube(str(link.get()), on_progress_callback=progress)
+            format = str(down_type.get())
+            path = str(selected_directory.get())
+            resolution = str(selected_quality.get())
+
+
+            if format == 'Audio':   # The if-else statement decides if the program is required to download an audio or video file.
+                audio = url.streams.get_audio_only('mp4')   # Gets the YouTube audio in '.mp3' format.
+                name = f'{audio.title}'
+            else:
+                video = url.streams.filter(file_extension='mp4').get_by_resolution(resolution)  # Gets the YouTube video with the resolution specified in the GUI.
+                name=f'{video.title}'
+
+        except AttributeError:  # Runs if the video is a 'NoneType' object. This happens if the selected resolution or file extension can't be found.
+            error('Selected resolution is unavailable. Try a different resolution.')
+        confirm = audio if format == 'Audio' else video
+        if query(f'File size: {round((confirm.filesize/1000000), 2)} MB. Proceed with download?'):
             new_name = []
-            # Checks and removes punctuations from the video name
-            for x in name:
+
+            for x in name:  # Checks and removes punctuations from the video name.
                 if x not in list(string.punctuation):
                     new_name.append(x)
-            # Download Path
-            # Gotten from the directory entry in the UI
-            path=str(selected_directory.get())
-            # Runs if the download path is empty
-            if not path:
-                showerror(title='Error', message='Select a download location')
-            else:
-                audio.download(filename=''.join(new_name).replace(' ', '_') + ' ' + '(' + str(down_type.get()) + ')' + '.mp3', output_path=path)
-                showinfo(title='Success', message='Download Completed')
 
-        # Runs if the user has not selected a format
-        elif not str(down_type.get()):
-            showinfo(title='Error', message='Please select a download format')
-
-        # Runs if the selected format is 'Video'
-        else:
-            if not str(selected_quality.get()):
-                showinfo(title='Error', message='Please select a video quality')
+            if not path:    # Runs if the download path is empty.
+                error('Select a download location.')
             else:
-                try:
-                    # Gets the YouTube video with the resolution specified in the GUI
-                    video = url.streams.filter(file_extension='mp4').get_by_resolution(str(selected_quality.get()))
-                    name=f'{video.title}'
-                # Runs if the video is a 'NoneType' object
-                # This happens if the selected resolution or file extension can't be found
-                except AttributeError:
-                    showinfo(title='Error', message='Selected resolution is unavailable. Try a different resolution.')
-                new_name = []
-                # Checks and removes punctuations from the video name
-                for x in name:
-                    if x not in list(string.punctuation):
-                        new_name.append(x)
-                # Download Path
-                # Gotten from the directory entry in the UI
-                path=str(selected_directory.get())
-                # Runs if the download path is empty
-                if not path:
-                    showerror(title='Error', message='Select a download location')
+                if format == 'Audio':
+                    aud_name = ''.join(new_name).replace(' ', '_') + ' ' + '(' + format + ')' + '.mp3'
+                    if not os.path.isfile(os.path.join(path, aud_name)):
+                        # create_widgets(prog_label, prog_bar)
+                        audio.download(filename=aud_name, output_path=path)
+                        info('Download Completed.')
+                        # destroy_widgets(prog_label, prog_bar)
+                    else:
+                        if query("This file already exists in the current directory. Do you want to download it anyway?"):
+                            # create_widgets(prog_label, prog_bar)
+                            audio.download(filename=new_file_name(aud_name, path), output_path=path)
+                            info('Download Completed.')
+                            # destroy_widgets(prog_label, prog_bar)
                 else:
-                    # if name in os.path.join(path, name):
-                    #     name = f'{video.title}({selected_quality.get()})({random_number + 1}).mp4'
-                    # try:
-                    # url.register_on_progress_callback(progress)
-                    video.download(filename=''.join(new_name).replace(' ', '_') + ' ' + '(' + str(selected_quality.get()) + ')' + '.mp4', output_path=path)
-                    showinfo(title='Success', message='Download Completed')
-    # Runs if the link is not a YouTube link or the YT video is unavailable
-    except pytube.exceptions.VideoUnavailable:
-        showerror(title='Error', message='Link is invalid or the video is unavailable')
-    # Runs if the entry is not a link
-    except pytube.exceptions.RegexMatchError:
-        showerror(title='Error', message='Please enter a valid YouTube link')
+                    vid_name = ''.join(new_name).replace(' ', '_') + ' ' + '(' + resolution + ')' + '.mp4'
+                    if not os.path.isfile(os.path.join(path, vid_name)):
+                        # create_widgets(prog_label, prog_bar)
+                        video.download(filename=vid_name, output_path=path)
+                        info('Download Completed.')
+                        # destroy_widgets(prog_label, prog_bar)
+                    else:
+                        if query("This file already exists in the current directory. Do you want to download it anyway?"):
+                            # create_widgets(prog_label, prog_bar)
+                            video.download(filename=new_file_name(vid_name, path), output_path=path)
+                            info('Download Completed.')
+                            # destroy_widgets(prog_label, prog_bar)
+
+    except pytube.exceptions.VideoUnavailable:  # Runs if the link is not a YouTube link or the YT video is unavailable
+        error('Link is invalid or the video is unavailable.')
+
+    except pytube.exceptions.RegexMatchError:   # Runs if the entry is not a link
+        error('Please enter a valid YouTube link.')
+
+    except URLError:
+        error('Failed to connect. Ensure you have a stable internet connection.')
 
 def select_directory():
+    """
+    This function runs when the user clicks the 'Browse...' button on the UI.
+    It returns the selected directory to the entry widget beside the 'Browse...' button.
+    """
     select_dir = filedialog.askdirectory()
     selected_directory.insert(tk.END, select_dir)
 
 def disable_buttons():
+    """
+    This function disables the radio buttons for the video quality when the format is on 'Audio'.
+    It also re-enables the radio buttons when the format is on 'Video'.
+    """
     if str(down_type.get()) == "Audio":
         for key in side_by_side_widgets:
             side_by_side_widgets[key]['state'] = 'disabled'
@@ -91,21 +101,60 @@ def disable_buttons():
         for key in side_by_side_widgets:
             side_by_side_widgets[key]['state'] = 'enabled'
 
-# Function for the progress bar
-# P.S.: I don't know how to do this yet
-# def progress(stream, chunk, bytes_remaining):
-#     max_value = stream.filesize
-#     bytes_downloaded = max_value - bytes_remaining
-#     pb['value'] = bytes_downloaded
-#     pb['maximum'] = max_value
-#     if bytes_downloaded < max_value:
-#         pb.after(100, progress())
+def query(question: str) -> bool:
+    """
+    This function confirms if the user wants to perform an action.
+    """
+    answer = askyesno(title='Alert', message=question)
+    return answer
+
+def error(errormessage: str) -> None:
+    """
+    This function displays an error message.
+    """
+    showerror(title='Error', message=errormessage)
+
+def info(information: str) -> None:
+    """
+    This function displays information.
+    """
+    showinfo(title='Success', message=information)
+
+def new_file_name(name: str, path: str) -> str:
+    """
+    This function appends a unique number to the file name if a file with the same name already exists.
+    Why would someone want to download the same video again? I have no idea.
+    This function exists to make sure your duplicate downloads are duplicates.
+    """
+    file_parts = os.path.splitext(name)
+    base_name = file_parts[0]
+    extension = file_parts[1]
+    i = 1
+    while True:
+        n_name = f'{base_name}({i}){extension}'
+        if not os.path.isfile(os.path.join(n_name, path)):
+            return n_name
+        i += 1
+
+def progress(stream, chunk, bytes_remaining):
+    percent = (100 * (stream.filesize - bytes_remaining)) / stream.filesize
+    prog_label.config(text=f'{round(percent, 2)}%')
+    prog_bar['value'] = percent
+    root.update()
+
+# def create_widgets(*args):
+#     for b in args:
+#         b.pack(padx=10, pady=2 ,fill=tk.X, anchor=tk.CENTER)
+
+# def destroy_widgets(*args):
+#     for a in args:
+#         a.destroy()
 
 root = tk.Tk()
 
 # Window size
 width = 500
-height = 370
+height = 390
 
 # Screen Size
 scr_width = root.winfo_screenwidth()
@@ -183,16 +232,21 @@ video_qualities = ('144p', '240p', '360p', '480p', '720p', '1080p')
 down_type = tk.StringVar()
 types = ('Video', 'Audio')
 
-pb = ttk.Progressbar(
+prog_bar = ttk.Progressbar(
+        root,
+        orient='horizontal',
+        mode='determinate'
+    )
+
+prog_label = ttk.Label(
     root,
-    orient='horizontal',
-    mode='determinate',
+    text=''
 )
 
 version_no = ttk.Label(
     root,
     foreground='gray',
-    text='Build 5',
+    text='Build 7',
 )
 
 label.pack(anchor=tk.N, pady=10)
@@ -223,7 +277,8 @@ for quality in video_qualities:
 mode.pack(padx=10, pady=5, fill=tk.X)
 qualities.pack(padx=10, pady=5, fill=tk.X)
 download_button.pack()
-pb.pack(padx=10, pady=5 ,fill=tk.X)
+prog_label.pack(padx=10, pady=2 ,fill=tk.X, anchor=tk.CENTER)
+prog_bar.pack(padx=10, pady=2 ,fill=tk.X, anchor=tk.CENTER)
 version_no.pack(anchor=tk.SE, side=tk.BOTTOM)
 
 root.mainloop()

@@ -32,4 +32,8 @@ You can download and run it [here](https://github.com/SidKay/YT-Vid-Downloader-P
 - The progress bar is working now.
 - The program can now display the file size before downloading.
 
-P.S.: If anyone can see this, could they let me know why the program is quite slow and acts like it's not responing all the time? Thanks.
+### Build 8? (12/08/2023)
+- Refactored code using Object Oriented Programming (Found in 'OOP.py' file).
+- Threaded the download function. This should fix the issue where the program appears to have stopped responding when a file is being downloaded (Still does a bit but not as bad now).
+- Changed the GUI layout.
+- Note: Code in 'OOP.py' file will replace code in 'main.py'... someday.

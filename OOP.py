@@ -108,7 +108,7 @@ class GUI(tk.Tk):
         self.media_stream = None
         self._link = tk.StringVar()
         self._path = tk.StringVar()
-        self._format = tk.StringVar()
+        self._format = tk.StringVar(value='Video')
         self._quality = tk.StringVar(value='360p')
         
         self.cancel = False
@@ -117,7 +117,41 @@ class GUI(tk.Tk):
         self.resizable(0, 0)
         
         self.menu_bar = tk.Menu(self)
-        self.menu_bar.add_command(label='About', command=self.show_about)
+
+        self.file_menu = tk.Menu(
+            self.menu_bar,
+            tearoff=0
+        )
+        self.about_menu = tk.Menu(
+            self.menu_bar,
+            tearoff=0
+        )
+
+        self.file_menu.add_command(
+            label='Set Defaults',
+            command=self.select_defaults
+        )
+        self.file_menu.add_command(
+            label='Exit',
+            command=self.destroy
+        )
+
+        self.about_menu.add_command(
+            label='How to Use',
+        )
+        self.about_menu.add_command(
+            label='About',
+            command=self.show_about
+        )
+        
+        self.menu_bar.add_cascade(
+            label='File',
+            menu=self.file_menu
+        )
+        self.menu_bar.add_cascade(
+            label='Info',
+            menu=self.about_menu
+        )
 
         self.configure(menu=self.menu_bar)
 
@@ -137,7 +171,8 @@ class GUI(tk.Tk):
             self,
             textvariable=self._link,
             relief=tk.RIDGE,
-            bd=5
+            bd=5,
+            exportselection=0
         )
         self.link_entry.grid(
             row=1,
@@ -148,6 +183,7 @@ class GUI(tk.Tk):
             ipady=10,
             pady=(0, 6)
         )
+        self.link_entry.focus()
 
         self.path_select_label = tk.Label(
             self,
@@ -167,7 +203,8 @@ class GUI(tk.Tk):
             self,
             textvariable=self._path,
             relief=tk.RIDGE,
-            bd=5
+            bd=5,
+            exportselection=0
         )
         self.path_entry.grid(
             row=3,
@@ -332,23 +369,27 @@ class GUI(tk.Tk):
         if os.path.exists(self.path):
             pass
         else:
-            showinfo('Tuber', 'Invalid Path')
+            self.info('Invalid Path')
             return
 
         link_pattern = r'(https?://)?(www\.)?(youtube\.com|youtu\.be)/'
         if not re.match(link_pattern, self.link):
-            showinfo('Tuber', 'Invalid link')
+            self.info('Invalid link')
             return
         elif not self.format:
-            showinfo('Tuber', 'Select Format')
+            self.info('Select Format')
             return
         elif not self.quality:
-            showinfo('Tuber', 'Select Quality')
+            self.info('Select Quality')
             return
 
-        self.create_stream()
+        try:
+            self.create_stream()
+        except Exception as e:
+            self.error(e)
+            return
 
-        if askyesno('Tuber', f'File size: {self.media_stream.check_size()} MB'):
+        if self.query(f'File size: {self.media_stream.check_size()} MB'):
             self.media_stream.render_widgets()
             self.download_callback()
 
@@ -362,29 +403,27 @@ class GUI(tk.Tk):
         self.disable_controls()
 
         try:
-        
-            if not os.path.isfile(os.path.join(self.media_stream.file_name, self.path)):
+            if not os.path.isfile(os.path.join(self.path, self.media_stream.file_name)):
                 self.media_stream.download()
-                showinfo('Tuber', 'Download Complete')
+                self.info('Download Complete')
+
             else:
-                que = askyesno('Tuber', 'File Exists. Download Anyway?')
-                if que:
+                if self.query('File Exists. Download Anyway?'):
                     aaa = self.media_stream.file_name
                     self.media_stream.file_name = self.duplicate_name(aaa, self.path) 
                     self.media_stream.download()
-                    showinfo('Tuber', 'Download Complete')
+                    self.info('Download Complete')
                 else:
-                    showinfo('Tuber', 'Download Cancelled')
+                    self.info('Download Cancelled')
         except Exception as e:
-            showerror('Tuber', e)
+            self.error(e)
         
         self.media_stream.remove_widgets()
         self.enable_controls()
         self.media_stream = None
 
     def show_about(self):
-        showinfo(
-            'Tuber',
+        self.info(
             '''A YouTube video downloader made by SidKay.\n
 There are still a few bugs in the program so
 Everything may not work as intended.
@@ -445,6 +484,131 @@ Plus I may decide to add a few other features as time passes.'''
                 return new_name
             i += 1
     
+    def select_defaults(self):
+
+        self.def_path = tk.StringVar()
+        self.def_quality = tk.StringVar()
+
+        self.sub_window = tk.Toplevel()
+        self.sub_window.title('Set Default Options')
+
+        self.heading = tk.Label(
+            self.sub_window,
+            text='Use this to set default download parameters'
+        )
+        self.heading.grid(
+            row=0,
+            column=0,
+            columnspan=6,
+            pady=(10, 6),
+            padx=10,
+        )
+
+        self.def_path_select_label = tk.Label(
+            self.sub_window,
+            text='Enter Download Path Here or Use the \'BROWSE...\' button'
+        )
+        self.def_path_select_label.grid(
+            row=1,
+            column=0,
+            columnspan=6,
+            padx=10,
+            sticky=tk.E + tk.W + tk.N + tk.S,
+            pady=(0, 6)
+        )
+
+        self.def_path_entry = ttk.Entry(
+            self.sub_window,
+            textvariable=self.def_path,
+            exportselection=0
+        )
+        self.def_path_entry.grid(
+            row=2,
+            column=0,
+            columnspan=4,
+            padx=10,
+            sticky=tk.E + tk.W + tk.N + tk.S,
+            pady=(0, 6)
+        )
+        self.def_path_entry.focus()
+
+        self.def_browse = ttk.Button(
+            self.sub_window,
+            text='BROWSE...',
+            command=self.def_path_select,
+        )
+        self.def_browse.grid(
+            row=2,
+            column=4,
+            columnspan=2,
+            padx=10,
+            sticky=tk.E + tk.W + tk.N + tk.S,
+            pady=(0, 6)
+        )
+
+        self.def_quality_frame = tk.LabelFrame(
+            self.sub_window,
+            text='Quality',
+        )
+
+        self.def_available_qualities = dict()
+        for q in self.qualities:
+            self.def_available_qualities[q] = ttk.Radiobutton(
+                self.def_quality_frame,
+                text=q,
+                value=q,
+                variable=self.def_quality,
+            )
+            self.def_available_qualities[q].grid(
+                row=0,
+                column=self.qualities.index(q),
+                # columnspan=1,
+            )
+        
+        self.def_quality_frame.grid(
+            row=3,
+            column=0,
+            columnspan=6,
+            padx=10,
+            sticky=tk.E + tk.W + tk.N + tk.S,
+            pady=(0, 6)
+        )
+
+        self.def_select = ttk.Button(
+            self.sub_window,
+            text='Save',
+            command=self.create_defaults
+        )
+        self.def_select.grid(
+            row=6,
+            column=2,
+            columnspan=2,
+            padx=10,
+            sticky=tk.E + tk.W + tk.N + tk.S,
+            pady=(0, 10)
+        )
+
+    def def_path_select(self):
+        select_path = filedialog.askdirectory()
+        self.def_path_entry.delete(0, tk.END)
+        self.def_path_entry.insert(tk.END, select_path)
+        return
+
+    def create_defaults(self):
+        with open('defaults', 'w') as f:
+            print(self.def_path.get(), file=f)
+            print(self.def_quality.get(), file=f)
+        self.info('Defaults saved')
+
+    def info(self, message):
+        showinfo('Info', message)
+
+    def error(self, message):
+        showerror('Error', message)
+
+    def query(self, message):
+        askyesno('Query', message)
+
 if __name__ == '__main__':
     main_window = GUI()
     main_window.mainloop()

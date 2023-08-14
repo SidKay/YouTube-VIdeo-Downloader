@@ -1,6 +1,7 @@
 import os
 import string
 from urllib.error import URLError
+from threading import Thread
 
 import pytube
 from pytube import YouTube
@@ -26,11 +27,15 @@ def download() -> None:
 
 
             if format == 'Audio':   # The if-else statement decides if the program is required to download an audio or video file.
+                global audio
                 audio = url.streams.get_audio_only('mp4')   # Gets the YouTube audio in '.mp3' format.
                 name = f'{audio.title}'
-            else:
+            elif format == 'Video':
+                global video
                 video = url.streams.filter(file_extension='mp4').get_by_resolution(resolution)  # Gets the YouTube video with the resolution specified in the GUI.
                 name=f'{video.title}'
+            else:
+                error('Select a file format.')
 
         except AttributeError:  # Runs if the video is a 'NoneType' object. This happens if the selected resolution or file extension can't be found.
             error('Selected resolution is unavailable. Try a different resolution.')
@@ -49,28 +54,21 @@ def download() -> None:
                     aud_name = ''.join(new_name).replace(' ', '_') + ' ' + '(' + format + ')' + '.mp3'
                     if not os.path.isfile(os.path.join(path, aud_name)):
                         # create_widgets(prog_label, prog_bar)
-                        audio.download(filename=aud_name, output_path=path)
-                        info('Download Completed.')
-                        # destroy_widgets(prog_label, prog_bar)
+                        thread = Thread(target=download2, args=(format, aud_name, path))
+                        thread.start()
                     else:
                         if query("This file already exists in the current directory. Do you want to download it anyway?"):
-                            # create_widgets(prog_label, prog_bar)
-                            audio.download(filename=new_file_name(aud_name, path), output_path=path)
-                            info('Download Completed.')
-                            # destroy_widgets(prog_label, prog_bar)
+                            thread = Thread(target=download2, args=(format, aud_name, path))
+                            thread.start()
                 else:
                     vid_name = ''.join(new_name).replace(' ', '_') + ' ' + '(' + resolution + ')' + '.mp4'
                     if not os.path.isfile(os.path.join(path, vid_name)):
-                        # create_widgets(prog_label, prog_bar)
-                        video.download(filename=vid_name, output_path=path)
-                        info('Download Completed.')
-                        # destroy_widgets(prog_label, prog_bar)
+                        thread = Thread(target=download2, args=(format, vid_name, path))
+                        thread.start()
                     else:
                         if query("This file already exists in the current directory. Do you want to download it anyway?"):
-                            # create_widgets(prog_label, prog_bar)
-                            video.download(filename=new_file_name(vid_name, path), output_path=path)
-                            info('Download Completed.')
-                            # destroy_widgets(prog_label, prog_bar)
+                            thread = Thread(target=download2, args=(format, vid_name, path))
+                            thread.start()
 
     except pytube.exceptions.VideoUnavailable:  # Runs if the link is not a YouTube link or the YT video is unavailable
         error('Link is invalid or the video is unavailable.')
@@ -80,6 +78,16 @@ def download() -> None:
 
     except URLError:
         error('Failed to connect. Ensure you have a stable internet connection.')
+
+def download2(format, filename, path):
+    if format == 'Audio':
+        audio.download(filename=filename, output_path=path)
+        info('Download Complete.')
+        return
+    else:
+        video.download(filename=filename, output_path=path)
+        info('Download Complete.')
+        return
 
 def select_directory():
     """
@@ -140,7 +148,7 @@ def progress(stream, chunk, bytes_remaining):
     percent = (100 * (stream.filesize - bytes_remaining)) / stream.filesize
     prog_label.config(text=f'{round(percent, 2)}%')
     prog_bar['value'] = percent
-    root.update()
+    prog_bar.update()
 
 # def create_widgets(*args):
 #     for b in args:

@@ -37,3 +37,13 @@ You can download and run it [here](https://github.com/SidKay/YT-Vid-Downloader-P
 - Threaded the download function. This should fix the issue where the program appears to have stopped responding when a file is being downloaded (Still does a bit but not as bad now).
 - Changed the GUI layout.
 - Note: Code in 'OOP.py' file will replace code in 'main.py'... someday.
+
+### Build 9 (13/08/2023)
+- Fixed a few bugs.
+- Started working on a preset variable function but gave up for now.
+- That's about it.
+
+### Build 10 (16/08/2023)
+- More bug fixes.
+- Added option to set default values.
+- A bit of fine tuning.

@@ -105,11 +105,40 @@ class GUI(tk.Tk):
 
         self.qualities = ('144p','240p','360p','480p','720p','1080p',)
 
+        # If defaults have been created
+        if os.path.isfile('defaults'):
+            self._path = tk.StringVar()
+            self._quality = tk.StringVar()
+
+            with open('defaults') as d:
+                def_values = d.readlines()
+            for val in def_values:
+
+                # Check if default value is a valid path
+                if os.path.exists(val[:-1]):
+                    self._path = tk.StringVar(value=val[:-1])
+
+                # Check if default value is a valid resolution
+                elif val[:-1] in self.qualities:
+                    self._quality = tk.StringVar(value=val[:-1])
+
+                # This handles defaults that were not chosen
+                elif val == '\n':
+                    continue
+
+                # Error displays when value is invalid
+                else:
+                    self.error(
+                        'One or more default values were invalid. Please use valid default values'
+                    )
+        # If defaults have not been created
+        else:
+            self._path = tk.StringVar()
+            self._quality = tk.StringVar()
+
         self.media_stream = None
         self._link = tk.StringVar()
-        self._path = tk.StringVar()
-        self._format = tk.StringVar(value='Video')
-        self._quality = tk.StringVar(value='360p')
+        self._format = tk.StringVar()
         
         self.cancel = False
 
@@ -138,6 +167,7 @@ class GUI(tk.Tk):
 
         self.about_menu.add_command(
             label='How to Use',
+            command=self.show_help
         )
         self.about_menu.add_command(
             label='About',
@@ -335,7 +365,7 @@ class GUI(tk.Tk):
 
         self.cancel_button = tk.Button(
             self,
-            text='Cancel',
+            text='Cancel (NOT WORKING)',
             compound=tk.LEFT,
             relief=tk.GROOVE,
             bg='#aaaaaa',
@@ -350,8 +380,22 @@ class GUI(tk.Tk):
             padx=10,
             sticky=tk.E + tk.W + tk.N + tk.S,
             ipady=10,
-            pady=(0, 6)
+            pady=(0, 10)
         )
+
+        # self.build_no = tk.Label(
+        #     self,
+        #     text='Build 10',
+        #     fg='gray',
+        #     anchor=tk.E
+        # )
+        # self.build_no.grid(
+        #     row=7,
+        #     column=5,
+        #     padx=10,
+        #     pady=(0, 10),
+        #     sticky=tk.N + tk.S + tk.E + tk.W
+        # )
 
     def create_stream(self):
 
@@ -369,18 +413,18 @@ class GUI(tk.Tk):
         if os.path.exists(self.path):
             pass
         else:
-            self.info('Invalid Path')
+            self.info('This path is invalid. Select a valid path.')
             return
 
         link_pattern = r'(https?://)?(www\.)?(youtube\.com|youtu\.be)/'
         if not re.match(link_pattern, self.link):
-            self.info('Invalid link')
+            self.info('This is an invalid YouTube link. Enter a valid link.')
             return
         elif not self.format:
-            self.info('Select Format')
+            self.info('Select a file format.')
             return
         elif not self.quality:
-            self.info('Select Quality')
+            self.info('Select a video quality.')
             return
 
         try:
@@ -405,16 +449,16 @@ class GUI(tk.Tk):
         try:
             if not os.path.isfile(os.path.join(self.path, self.media_stream.file_name)):
                 self.media_stream.download()
-                self.info('Download Complete')
+                self.info('Download Complete.')
 
             else:
                 if self.query('File Exists. Download Anyway?'):
                     aaa = self.media_stream.file_name
                     self.media_stream.file_name = self.duplicate_name(aaa, self.path) 
                     self.media_stream.download()
-                    self.info('Download Complete')
+                    self.info('Download Complete.')
                 else:
-                    self.info('Download Cancelled')
+                    self.info('Download Cancelled.')
         except Exception as e:
             self.error(e)
         
@@ -429,6 +473,17 @@ There are still a few bugs in the program so
 Everything may not work as intended.
 Please bear with me while I fix them (or not).\n
 Plus I may decide to add a few other features as time passes.'''
+        )
+
+    def show_help(self):
+        self.info(
+            """__HOW TO USE__\n
+1. Enter the YouTube video link of the media that you want to download.\n
+2. Enter the download path of the media.\n
+3. Choose if you want it in an audio or video format.\n
+4. Select the video quality (Only applies for video downloads).\n
+NOTE: You can use 'Select Defaults' to reduce the hassle of selecting a download path or quality everytime.
+            """
         )
 
     def disable_qualities(self):
@@ -489,7 +544,11 @@ Plus I may decide to add a few other features as time passes.'''
         self.def_path = tk.StringVar()
         self.def_quality = tk.StringVar()
 
-        self.sub_window = tk.Toplevel()
+        self.sub_window = tk.Toplevel(self)
+        self.resizable(0, 0)
+
+        self.sub_window.attributes('-toolwindow', True)
+
         self.sub_window.title('Set Default Options')
 
         self.heading = tk.Label(
@@ -504,12 +563,23 @@ Plus I may decide to add a few other features as time passes.'''
             padx=10,
         )
 
+        self.sep = ttk.Separator(
+            self.sub_window, orient=tk.HORIZONTAL
+        )
+        self.sep.grid(
+            row=1,
+            column=0,
+            columnspan=6,
+            padx=10,
+            pady=(0, 6)
+        )
+
         self.def_path_select_label = tk.Label(
             self.sub_window,
             text='Enter Download Path Here or Use the \'BROWSE...\' button'
         )
         self.def_path_select_label.grid(
-            row=1,
+            row=2,
             column=0,
             columnspan=6,
             padx=10,
@@ -523,7 +593,7 @@ Plus I may decide to add a few other features as time passes.'''
             exportselection=0
         )
         self.def_path_entry.grid(
-            row=2,
+            row=3,
             column=0,
             columnspan=4,
             padx=10,
@@ -538,7 +608,7 @@ Plus I may decide to add a few other features as time passes.'''
             command=self.def_path_select,
         )
         self.def_browse.grid(
-            row=2,
+            row=3,
             column=4,
             columnspan=2,
             padx=10,
@@ -566,7 +636,7 @@ Plus I may decide to add a few other features as time passes.'''
             )
         
         self.def_quality_frame.grid(
-            row=3,
+            row=4,
             column=0,
             columnspan=6,
             padx=10,
@@ -580,7 +650,7 @@ Plus I may decide to add a few other features as time passes.'''
             command=self.create_defaults
         )
         self.def_select.grid(
-            row=6,
+            row=5,
             column=2,
             columnspan=2,
             padx=10,
@@ -588,7 +658,10 @@ Plus I may decide to add a few other features as time passes.'''
             pady=(0, 10)
         )
 
+        self.sub_window.grab_set()
+
     def def_path_select(self):
+        self.sub_window.grab_set()
         select_path = filedialog.askdirectory()
         self.def_path_entry.delete(0, tk.END)
         self.def_path_entry.insert(tk.END, select_path)
@@ -598,7 +671,13 @@ Plus I may decide to add a few other features as time passes.'''
         with open('defaults', 'w') as f:
             print(self.def_path.get(), file=f)
             print(self.def_quality.get(), file=f)
-        self.info('Defaults saved')
+        self.info(
+            """
+Defaults Saved.
+This will apply when you restart the application.
+            """
+        )
+        self.sub_window.destroy
 
     def info(self, message):
         showinfo('Info', message)
